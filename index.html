@@ -55,9 +55,21 @@ nav{position:sticky;top:0;z-index:100;background:var(--dark);
 .fb:hover:not(.on){border-color:var(--gold);}
 
 /* PRODUCTS */
-.section{padding:24px 16px;max-width:960px;margin:0 auto;}
+.section-wrap{width:100%;background:var(--bg);}
+.section-wrap.dark{background:var(--dark2);}
+.section-wrap.white{background:white;}
+.section{padding:32px 24px;max-width:1100px;margin:0 auto;}
 .sec-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--dark);
   margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #e8e0d0;}
+/* Wide screen grid */
+@media(min-width:900px){
+  .grid{grid-template-columns:repeat(4,1fr);}
+  .info-grid{grid-template-columns:repeat(3,1fr);}
+  .cdetails{grid-template-columns:repeat(4,1fr);}
+}
+@media(min-width:1200px){
+  .section{padding:40px 48px;}
+}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:15px;}
 .card{background:white;border-radius:var(--r);overflow:hidden;
   box-shadow:0 2px 10px rgba(0,0,0,0.07);transition:var(--tr);position:relative;}
@@ -235,6 +247,7 @@ footer{background:var(--dark);padding:26px 20px;text-align:center;}
   <button class="fb" data-cat="import" id="T_f_import">Import</button>
 </div>
 
+<div class="section-wrap white">
 <div class="section">
   <h2 class="sec-title" id="T_sec_products">Unsere Produkte</h2>
   <div class="grid" id="prodGrid">
@@ -320,7 +333,9 @@ footer{background:var(--dark);padding:26px 20px;text-align:center;}
     </div>
   </div>
 </div>
+</div>
 
+<div class="section-wrap">
 <div class="section">
   <h2 class="sec-title" id="T_sec_info">Wissenswertes über Afghan Trockenfrüchte</h2>
   <div class="info-grid">
@@ -351,7 +366,9 @@ footer{background:var(--dark);padding:26px 20px;text-align:center;}
     </div>
   </div>
 </div>
+</div>
 
+<div class="section-wrap white">
 <div class="section">
   <h2 class="sec-title" id="T_sec_contact">Kontakt & Inhaber</h2>
   <div class="ccard">
@@ -378,6 +395,8 @@ footer{background:var(--dark);padding:26px 20px;text-align:center;}
         <div class="ci-val">Muri bei Bern, Schweiz</div></div></div>
     </div>
   </div>
+</div>
+</div>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeCart()"></div>
