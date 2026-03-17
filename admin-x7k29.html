@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQJE</title>
+<style>
+:root{
+  --gold:#C9A84C;--gold2:#E8C96D;--dark:#0C0A07;--dark2:#161310;
+  --green:#22c55e;--red:#ef4444;--blue:#3b82f6;--bg:#f4f4f5;
+  --r:10px;--tr:0.25s ease;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:#1a1208;}
+
+/* ── LOGIN ── */
+#loginScreen{
+  position:fixed;inset:0;background:var(--dark);
+  display:flex;align-items:center;justify-content:center;z-index:9999;
+}
+.login-box{
+  background:#1a1612;border:1px solid rgba(201,168,76,0.25);
+  border-radius:20px;padding:44px 36px;width:340px;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.login-logo{width:80px;height:80px;margin:0 auto 20px;}
+.login-box h2{font-size:22px;color:var(--gold);margin-bottom:6px;font-family:Georgia,serif;}
+.login-box p{font-size:13px;color:#666;margin-bottom:28px;}
+.login-input{
+  width:100%;padding:13px 16px;border-radius:10px;
+  border:1.5px solid #2a2520;background:#111;color:white;
+  font-size:15px;margin-bottom:12px;outline:none;transition:border var(--tr);
+}
+.login-input:focus{border-color:var(--gold);}
+.login-btn{
+  width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--dark);border:none;border-radius:10px;font-size:15px;
+  font-weight:700;cursor:pointer;transition:opacity var(--tr);
+}
+.login-btn:hover{opacity:0.9;}
+.login-err{color:var(--red);font-size:13px;margin-top:10px;display:none;}
+.login-attempts{font-size:12px;color:#555;margin-top:8px;}
+
+/* ── ADMIN SHELL ── */
+#admin{display:none;min-height:100vh;}
+.topbar{
+  background:var(--dark);padding:0 24px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.3);
+}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.topbar-logo{font-family:Georgia,serif;color:var(--gold);font-size:18px;font-weight:700;letter-spacing:2px;}
+.topbar-badge{background:rgba(201,168,76,0.15);color:var(--gold);font-size:11px;
+  padding:3px 8px;border-radius:5px;letter-spacing:1px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.topbar-user{color:#888;font-size:13px;}
+.logout-btn{background:rgba(255,255,255,0.06);color:#aaa;border:1px solid rgba(255,255,255,0.1);
+  border-radius:7px;padding:6px 14px;font-size:12px;cursor:pointer;transition:var(--tr);}
+.logout-btn:hover{background:rgba(239,68,68,0.15);color:var(--red);border-color:rgba(239,68,68,0.3);}
+
+.layout{display:flex;min-height:calc(100vh - 58px);}
+.sidebar{
+  width:220px;background:white;border-right:1px solid #e8e8e8;
+  padding:16px 12px;flex-shrink:0;
+}
+.sidebar-section{font-size:10px;color:#aaa;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;padding:8px 10px 4px;margin-top:8px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  border-radius:8px;font-size:14px;color:#555;cursor:pointer;transition:var(--tr);
+  margin-bottom:2px;
+}
+.nav-item:hover{background:#f4f4f5;color:#1a1208;}
+.nav-item.on{background:#fef3c7;color:#92400e;font-weight:600;}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-badge{margin-left:auto;background:var(--red);color:white;border-radius:10px;
+  padding:2px 7px;font-size:11px;font-weight:700;}
+
+.content{flex:1;padding:24px;overflow-x:hidden;}
+.page{display:none;}
+.page.on{display:block;}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
+.stat{background:white;border-radius:var(--r);padding:20px;box-shadow:0 1px 6px rgba(0,0,0,0.06);}
+.stat-val{font-size:28px;font-weight:700;color:var(--dark);font-family:Georgia,serif;}
+.stat-lbl{font-size:12px;color:#888;margin-top:4px;}
+.stat-icon{font-size:24px;margin-bottom:8px;}
+
+/* ── CARDS ── */
+.card{background:white;border-radius:var(--r);padding:22px;
+  box-shadow:0 1px 6px rgba(0,0,0,0.06);margin-bottom:20px;}
+.card-head{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;padding-bottom:12px;border-bottom:1.5px solid #f0f0f0;}
+.card-title{font-size:16px;font-weight:700;color:var(--dark);}
+.btn{padding:8px 16px;border-radius:8px;border:none;font-size:13px;
+  font-weight:600;cursor:pointer;transition:var(--tr);display:inline-flex;align-items:center;gap:6px;}
+.btn-gold{background:var(--gold);color:var(--dark);}
+.btn-gold:hover{background:var(--gold2);}
+.btn-green{background:var(--green);color:white;}
+.btn-red{background:#fee2e2;color:var(--red);}
+.btn-red:hover{background:#fecaca;}
+.btn-gray{background:#f4f4f5;color:#555;}
+.btn-blue{background:#eff6ff;color:var(--blue);}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{text-align:left;padding:10px 12px;background:#f8f8f8;color:#666;
+  font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;}
+td{padding:11px 12px;border-bottom:1px solid #f4f4f4;vertical-align:middle;}
+tr:last-child td{border:none;}
+tr:hover td{background:#fafafa;}
+
+/* ── PRODUCT EDITOR ── */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.prod-card{background:white;border-radius:var(--r);overflow:hidden;
+  box-shadow:0 1px 6px rgba(0,0,0,0.06);transition:var(--tr);}
+.prod-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.10);}
+.prod-img-wrap{position:relative;aspect-ratio:1/1;background:#f4f4f5;overflow:hidden;}
+.prod-img-wrap img{width:100%;height:100%;object-fit:cover;}
+.prod-img-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,0.5);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:var(--tr);cursor:pointer;
+}
+.prod-img-wrap:hover .prod-img-overlay{opacity:1;}
+.prod-card-body{padding:12px;}
+.prod-name-input{width:100%;border:1.5px solid #e8e8e8;border-radius:7px;
+  padding:7px 10px;font-size:14px;font-weight:600;margin-bottom:6px;outline:none;}
+.prod-name-input:focus{border-color:var(--gold);}
+.prod-row{display:flex;gap:6px;margin-bottom:6px;}
+.prod-row input,.prod-row select{flex:1;border:1.5px solid #e8e8e8;border-radius:7px;
+  padding:6px 8px;font-size:13px;outline:none;}
+.prod-row input:focus,.prod-row select:focus{border-color:var(--gold);}
+.prod-actions{display:flex;gap:6px;margin-top:8px;}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+.status-dot.active{background:var(--green);}
+.status-dot.inactive{background:#d1d5db;}
+
+/* ── ADD PRODUCT MODAL ── */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-bg.on{display:flex;}
+.modal{background:white;border-radius:16px;padding:28px;width:100%;max-width:520px;
+  max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:20px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;font-weight:600;color:#666;
+  text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
+.field input,.field select,.field textarea{
+  width:100%;padding:10px 13px;border:1.5px solid #e8e8e8;
+  border-radius:9px;font-size:14px;outline:none;transition:border var(--tr);}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+.field textarea{resize:vertical;min-height:80px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.img-upload-area{
+  border:2px dashed #e8e8e8;border-radius:10px;padding:30px;
+  text-align:center;cursor:pointer;transition:var(--tr);background:#fafafa;
+}
+.img-upload-area:hover{border-color:var(--gold);background:#fffbf0;}
+.img-preview{width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-top:10px;display:none;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+
+/* ── ORDERS ── */
+.order-card{background:white;border-radius:var(--r);padding:16px 20px;
+  box-shadow:0 1px 6px rgba(0,0,0,0.06);margin-bottom:12px;
+  display:flex;gap:16px;align-items:flex-start;border-left:4px solid transparent;}
+.order-card.new{border-left-color:var(--green);}
+.order-card.seen{border-left-color:#e8e8e8;}
+.order-info{flex:1;}
+.order-name{font-weight:700;font-size:15px;margin-bottom:4px;}
+.order-meta{font-size:13px;color:#888;display:flex;flex-wrap:wrap;gap:10px;}
+.order-items{font-size:13px;color:#555;margin-top:6px;}
+.order-total{font-family:Georgia,serif;font-size:18px;font-weight:700;color:var(--dark);white-space:nowrap;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge.new{background:#dcfce7;color:#166534;}
+.badge.seen{background:#f3f4f6;color:#666;}
+
+/* ── SETTINGS ── */
+.setting-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f4f4f4;}
+.setting-item:last-child{border:none;}
+.setting-label{flex:1;}
+.setting-label strong{display:block;font-size:14px;margin-bottom:3px;}
+.setting-label span{font-size:12px;color:#888;}
+.setting-input{flex:2;}
+.setting-input input{width:100%;padding:9px 13px;border:1.5px solid #e8e8e8;
+  border-radius:9px;font-size:14px;outline:none;}
+.setting-input input:focus{border-color:var(--gold);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:20px;right:20px;
+  background:var(--dark);color:var(--gold);
+  padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  z-index:9999;transform:translateY(80px);opacity:0;
+  transition:all 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.3);
+}
+.toast.on{transform:translateY(0);opacity:1;}
+
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .stats{grid-template-columns:1fr 1fr;}
+  .prod-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <svg class="login-logo" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="47" stroke="#C9A84C" stroke-width="2"/>
+      <circle cx="50" cy="50" r="42" stroke="#C9A84C" stroke-width="0.8" opacity="0.5"/>
+      <text x="50" y="56" text-anchor="middle" font-family="Georgia,serif" font-size="16" font-weight="700" fill="#C9A84C" letter-spacing="2">SQJE</text>
+    </svg>
+    <h2>Admin Panel</h2>
+    <p>Gesicherter Zugang — nur für Inhaber</p>
+    <input class="login-input" type="password" id="pwIn" placeholder="Passwort..." onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">🔐 Anmelden</button>
+    <div class="login-err" id="loginErr">❌ Falsches Passwort!</div>
+    <div class="login-attempts" id="loginAttempts"></div>
+  </div>
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div id="admin">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">SQJE</span>
+      <span class="topbar-badge">ADMIN</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user">Shahram Qurbani</span>
+      <button class="logout-btn" onclick="doLogout()">Abmelden</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section">Hauptmenü</div>
+      <div class="nav-item on" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="showPage('products',this)"><span class="nav-icon">🥜</span>Produkte</div>
+      <div class="nav-item" onclick="showPage('orders',this)">
+        <span class="nav-icon">📦</span>Bestellungen
+        <span class="nav-badge" id="newOrdersBadge" style="display:none">0</span>
+      </div>
+      <div class="sidebar-section">System</div>
+      <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span>Einstellungen</div>
+      <div class="nav-item" onclick="window.open('index.html','_blank')"><span class="nav-icon">🌐</span>Website öffnen</div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page on" id="page-dashboard">
+        <div class="stats" id="statsGrid"></div>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">📦 Letzte Bestellungen</span>
+            <button class="btn btn-gray" onclick="showPage('orders',document.querySelector('.nav-item:nth-child(3))'))">Alle anzeigen</button>
+          </div>
+          <div id="recentOrders"><p style="color:#aaa;font-size:14px;padding:10px 0;">Noch keine Bestellungen.</p></div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="page" id="page-products">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">🥜 Produkte verwalten</span>
+            <button class="btn btn-gold" onclick="openAddProduct()">+ Neues Produkt</button>
+          </div>
+          <div class="prod-grid" id="prodGrid"></div>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div class="page" id="page-orders">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">📦 Alle Bestellungen</span>
+            <button class="btn btn-gray" onclick="addOrderManual()">+ Manuell eintragen</button>
+          </div>
+          <div id="ordersList"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="card">
+          <div class="card-head"><span class="card-title">⚙️ Einstellungen</span></div>
+          <div class="setting-item">
+            <div class="setting-label"><strong>WhatsApp Nummer</strong><span>Mit Ländervorwahl, ohne +</span></div>
+            <div class="setting-input"><input id="set_wa" type="text"></div>
+            <button class="btn btn-green" onclick="saveSetting('wa')">💾</button>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label"><strong>Telegram Username</strong><span>Ohne @</span></div>
+            <div class="setting-input"><input id="set_tg" type="text"></div>
+            <button class="btn btn-green" onclick="saveSetting('tg')">💾</button>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label"><strong>Passwort ändern</strong><span>Min. 6 Zeichen</span></div>
+            <div class="setting-input"><input id="set_pw" type="password" placeholder="Neues Passwort"></div>
+            <button class="btn btn-green" onclick="changePw()">💾</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADD PRODUCT MODAL ══ -->
+<div class="modal-bg" id="productModal">
+  <div class="modal">
+    <h3 id="modalTitle">+ Neues Produkt</h3>
+    <input type="hidden" id="editId">
+
+    <div class="field">
+      <label>Produktbild</label>
+      <div class="img-upload-area" onclick="document.getElementById('imgFile').click()">
+        <div id="uploadHint">📷 Bild auswählen oder hierher ziehen</div>
+        <img class="img-preview" id="imgPreview">
+      </div>
+      <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="handleImg(this)">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Name (Deutsch) *</label>
+        <input id="m_name_de" type="text" placeholder="z.B. Kandahari Rosinen">
+      </div>
+      <div class="field">
+        <label>Name (فارسی)</label>
+        <input id="m_name_fa" type="text" placeholder="مثلاً کشمش قندهاری">
+      </div>
+    </div>
+    <div class="field">
+      <label>Name (English)</label>
+      <input id="m_name_en" type="text" placeholder="e.g. Kandahari Raisins">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Preis CHF *</label>
+        <input id="m_price" type="number" step="0.1" placeholder="8.90">
+      </div>
+      <div class="field">
+        <label>Einheit</label>
+        <input id="m_unit" type="text" placeholder="100g">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Kategorie</label>
+      <select id="m_cat">
+        <option value="dry">Trockenfrüchte</option>
+        <option value="nuts">Nüsse</option>
+        <option value="seeds">Samen</option>
+        <option value="tea">Tee & Gewürze</option>
+        <option value="import">Import</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Badge (z.B. KANDAHAR, PREMIUM)</label>
+      <input id="m_badge" type="text" placeholder="KANDAHAR">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-gray" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-gold" onclick="saveProduct()">💾 Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ STORAGE HELPERS ══
+const S = {
+  get: k => { try{ return JSON.parse(localStorage.getItem('sqje_'+k)); }catch(e){ return null; } },
+  set: (k,v) => localStorage.setItem('sqje_'+k, JSON.stringify(v)),
+};
+
+// ══ DEFAULT DATA ══
+const DEFAULT_PW = 'sqje2025';
+const DEFAULT_PRODS = [
+  {id:1,name_de:'Kandahari Rosinen',name_fa:'کشمش قندهاری',name_en:'Kandahari Raisins',price:8.90,unit:'100g',cat:'dry',badge:'KANDAHAR',active:true,img:''},
+  {id:2,name_de:'Getrocknete Feigen',name_fa:'انجیر خشک',name_en:'Dried Figs',price:6.50,unit:'100g',cat:'dry',badge:'PREMIUM',active:true,img:''},
+  {id:3,name_de:'Afghan Pistazien',name_fa:'پسته افغانی',name_en:'Afghan Pistachios',price:12.00,unit:'100g',cat:'nuts',badge:'AFGHANISTAN',active:true,img:''},
+  {id:4,name_de:'Afghan Walnüsse',name_fa:'گردوی افغانی',name_en:'Afghan Walnuts',price:9.50,unit:'100g',cat:'nuts',badge:'PREMIUM',active:true,img:''},
+  {id:5,name_de:'Schwarzkümmel',name_fa:'سیاه‌دانه',name_en:'Black Cumin',price:5.00,unit:'100g',cat:'seeds',badge:'KALONJI',active:true,img:''},
+  {id:6,name_de:'Afghan Safran',name_fa:'زعفران افغانی',name_en:'Afghan Saffron',price:18.00,unit:'1g',cat:'tea',badge:'HERAT',active:true,img:''},
+  {id:7,name_de:'Getrocknete Aprikosen',name_fa:'زردآلو خشک',name_en:'Dried Apricots',price:5.50,unit:'100g',cat:'dry',badge:'IMPORT',active:true,img:''},
+  {id:8,name_de:'Grüner Kardamom',name_fa:'هل سبز',name_en:'Green Cardamom',price:7.00,unit:'100g',cat:'import',badge:'SPEZIALITÄT',active:true,img:''},
+];
+
+// ══ LOGIN ══
+let failCount = 0;
+function doLogin(){
+  const pw = document.getElementById('pwIn').value;
+  const saved = S.get('pw') || DEFAULT_PW;
+  if(pw === saved){
+    failCount = 0;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('admin').style.display='block';
+    init();
+  } else {
+    failCount++;
+    const err = document.getElementById('loginErr');
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',2500);
+    document.getElementById('loginAttempts').textContent = failCount >= 3 ? `${failCount} Fehlversuche` : '';
+    document.getElementById('pwIn').value='';
+    // Shake animation
+    document.querySelector('.login-box').style.animation='none';
+    setTimeout(()=>document.querySelector('.login-box').style.animation='',10);
+  }
+}
+document.getElementById('pwIn').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+
+function doLogout(){
+  document.getElementById('admin').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('pwIn').value='';
+}
+
+// ══ NAVIGATION ══
+function showPage(name, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+  document.getElementById('page-'+name).classList.add('on');
+  if(btn) btn.classList.add('on');
+  if(name==='products') renderProducts();
+  if(name==='orders') renderOrders();
+  if(name==='settings') loadSettings();
+  if(name==='dashboard') renderDashboard();
+}
+
+// ══ INIT ══
+function init(){
+  if(!S.get('products')) S.set('products', DEFAULT_PRODS);
+  if(!S.get('orders')) S.set('orders',[]);
+  if(!S.get('wa')) S.set('wa','41774974597');
+  if(!S.get('tg')) S.set('tg','sqje_shop');
+  renderDashboard();
+}
+
+// ══ DASHBOARD ══
+function renderDashboard(){
+  const prods = S.get('products')||[];
+  const orders = S.get('orders')||[];
+  const newO = orders.filter(o=>o.status==='new').length;
+  const rev = orders.reduce((s,o)=>s+(o.total||0),0);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat"><div class="stat-icon">🥜</div><div class="stat-val">${prods.length}</div><div class="stat-lbl">Produkte</div></div>
+    <div class="stat"><div class="stat-icon">📦</div><div class="stat-val">${orders.length}</div><div class="stat-lbl">Bestellungen</div></div>
+    <div class="stat"><div class="stat-icon">🔔</div><div class="stat-val" style="color:${newO>0?'var(--red)':'inherit'}">${newO}</div><div class="stat-lbl">Neue</div></div>
+    <div class="stat"><div class="stat-icon">💰</div><div class="stat-val" style="font-size:20px">CHF ${rev.toFixed(0)}</div><div class="stat-lbl">Umsatz</div></div>
+  `;
+
+  const badge = document.getElementById('newOrdersBadge');
+  if(newO > 0){ badge.style.display='block'; badge.textContent=newO; } else badge.style.display='none';
+
+  const recent = orders.slice(0,3);
+  document.getElementById('recentOrders').innerHTML = recent.length ? recent.map(o=>`
+    <div style="padding:10px 0;border-bottom:1px solid #f4f4f4;display:flex;gap:12px;align-items:center;">
+      <div style="flex:1"><strong>${o.name}</strong> <span style="font-size:12px;color:#aaa;margin-left:6px">${o.date||''}</span><br>
+      <span style="font-size:13px;color:#888">${o.items||''}</span></div>
+      <div><strong>CHF ${(o.total||0).toFixed(2)}</strong></div>
+      <span class="badge ${o.status}">${o.status==='new'?'Neu':'Gesehen'}</span>
+    </div>`).join('') : '<p style="color:#aaa;font-size:14px;padding:10px 0;">Noch keine Bestellungen.</p>';
+}
+
+// ══ PRODUCTS ══
+let currentImg = '';
+function renderProducts(){
+  const prods = S.get('products')||[];
+  document.getElementById('prodGrid').innerHTML = prods.map(p=>`
+    <div class="prod-card">
+      <div class="prod-img-wrap" onclick="editProductImg(${p.id})">
+        ${p.img ? `<img src="${p.img}" alt="">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-size:32px;">📷</div>`}
+        <div class="prod-img-overlay"><span style="color:white;font-size:13px;font-weight:600">📷 Bild ändern</span></div>
+      </div>
+      <div class="prod-card-body">
+        <input class="prod-name-input" value="${p.name_de}" onchange="quickSave(${p.id},'name_de',this.value)">
+        <div style="font-size:12px;color:#aaa;margin-bottom:6px;direction:rtl;text-align:right">${p.name_fa||''}</div>
+        <div class="prod-row">
+          <input type="number" value="${p.price}" step="0.1" placeholder="CHF" onchange="quickSave(${p.id},'price',parseFloat(this.value))" style="width:80px">
+          <input value="${p.unit}" placeholder="Einheit" onchange="quickSave(${p.id},'unit',this.value)" style="width:60px">
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="btn btn-blue" style="flex:1;font-size:12px" onclick="openEditProduct(${p.id})">✏️ Bearbeiten</button>
+          <button class="btn btn-red" style="font-size:12px" onclick="deleteProduct(${p.id})">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openAddProduct(){
+  document.getElementById('modalTitle').textContent='+ Neues Produkt';
+  document.getElementById('editId').value='';
+  document.getElementById('m_name_de').value='';
+  document.getElementById('m_name_fa').value='';
+  document.getElementById('m_name_en').value='';
+  document.getElementById('m_price').value='';
+  document.getElementById('m_unit').value='100g';
+  document.getElementById('m_badge').value='';
+  document.getElementById('m_cat').value='dry';
+  document.getElementById('imgPreview').style.display='none';
+  document.getElementById('uploadHint').style.display='block';
+  currentImg='';
+  document.getElementById('productModal').classList.add('on');
+}
+
+function openEditProduct(id){
+  const prods = S.get('products')||[];
+  const p = prods.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('modalTitle').textContent='✏️ Produkt bearbeiten';
+  document.getElementById('editId').value=id;
+  document.getElementById('m_name_de').value=p.name_de||'';
+  document.getElementById('m_name_fa').value=p.name_fa||'';
+  document.getElementById('m_name_en').value=p.name_en||'';
+  document.getElementById('m_price').value=p.price||'';
+  document.getElementById('m_unit').value=p.unit||'100g';
+  document.getElementById('m_badge').value=p.badge||'';
+  document.getElementById('m_cat').value=p.cat||'dry';
+  currentImg = p.img||'';
+  if(currentImg){
+    document.getElementById('imgPreview').src=currentImg;
+    document.getElementById('imgPreview').style.display='block';
+    document.getElementById('uploadHint').style.display='none';
+  } else {
+    document.getElementById('imgPreview').style.display='none';
+    document.getElementById('uploadHint').style.display='block';
+  }
+  document.getElementById('productModal').classList.add('on');
+}
+
+function editProductImg(id){
+  document.getElementById('editId').value=id;
+  document.getElementById('imgFile').click();
+}
+
+function handleImg(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    // Resize image
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const max = 600;
+      let w=img.width, h=img.height;
+      if(w>max){ h=h*max/w; w=max; }
+      if(h>max){ w=w*max/h; h=max; }
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      currentImg = canvas.toDataURL('image/jpeg',0.8);
+      document.getElementById('imgPreview').src=currentImg;
+      document.getElementById('imgPreview').style.display='block';
+      document.getElementById('uploadHint').style.display='none';
+      // If editing inline (from card), save immediately
+      const editId = document.getElementById('editId').value;
+      if(editId && !document.getElementById('productModal').classList.contains('on')){
+        quickSave(parseInt(editId),'img',currentImg);
+        renderProducts();
+      }
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveProduct(){
+  const name_de = document.getElementById('m_name_de').value.trim();
+  const price = parseFloat(document.getElementById('m_price').value);
+  if(!name_de || !price){ showToast('❌ Name und Preis sind pflicht!'); return; }
+
+  let prods = S.get('products')||[];
+  const editId = parseInt(document.getElementById('editId').value);
+
+  if(editId){
+    const idx = prods.findIndex(p=>p.id===editId);
+    if(idx>=0){
+      prods[idx] = {...prods[idx],
+        name_de, name_fa:document.getElementById('m_name_fa').value,
+        name_en:document.getElementById('m_name_en').value,
+        price, unit:document.getElementById('m_unit').value,
+        cat:document.getElementById('m_cat').value,
+        badge:document.getElementById('m_badge').value,
+        img:currentImg||prods[idx].img
+      };
+    }
+  } else {
+    const newId = Math.max(0,...prods.map(p=>p.id))+1;
+    prods.push({
+      id:newId, name_de, name_fa:document.getElementById('m_name_fa').value,
+      name_en:document.getElementById('m_name_en').value,
+      price, unit:document.getElementById('m_unit').value,
+      cat:document.getElementById('m_cat').value,
+      badge:document.getElementById('m_badge').value,
+      img:currentImg, active:true
+    });
+  }
+  S.set('products',prods);
+  closeModal();
+  renderProducts();
+  showToast('✅ Produkt gespeichert!');
+}
+
+function quickSave(id,field,val){
+  let prods = S.get('products')||[];
+  const idx = prods.findIndex(p=>p.id===id);
+  if(idx>=0){ prods[idx][field]=val; S.set('products',prods); }
+  showToast('✅ Gespeichert');
+}
+
+function deleteProduct(id){
+  if(!confirm('Produkt wirklich löschen?')) return;
+  let prods = S.get('products')||[];
+  S.set('products', prods.filter(p=>p.id!==id));
+  renderProducts();
+  showToast('🗑️ Gelöscht');
+}
+
+function closeModal(){
+  document.getElementById('productModal').classList.remove('on');
+  currentImg='';
+}
+document.getElementById('productModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
+
+// ══ ORDERS ══
+function renderOrders(){
+  const orders = S.get('orders')||[];
+  const box = document.getElementById('ordersList');
+  if(!orders.length){
+    box.innerHTML='<div style="text-align:center;padding:40px;color:#aaa;font-size:14px;">📬 Noch keine Bestellungen.<br><br><small>Bestellungen kommen via WhatsApp & Telegram. Hier kannst du sie manuell eintragen.</small></div>';
+    return;
+  }
+  box.innerHTML = orders.map((o,i)=>`
+    <div class="order-card ${o.status}">
+      <div class="order-info">
+        <div class="order-name">${o.name} <span class="badge ${o.status}" style="margin-left:6px">${o.status==='new'?'Neu':'Gesehen'}</span></div>
+        <div class="order-meta">
+          <span>📞 ${o.phone||'-'}</span>
+          <span>📍 ${o.addr||'-'}</span>
+          <span>💳 ${o.pay||'-'}</span>
+          ${o.date?`<span>📅 ${o.date}</span>`:''}
+        </div>
+        <div class="order-items">${o.items||''}</div>
+        ${o.note?`<div style="font-size:12px;color:#888;margin-top:4px">📝 ${o.note}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <div class="order-total">CHF ${(o.total||0).toFixed(2)}</div>
+        <div style="display:flex;gap:6px;">
+          ${o.status==='new'?`<button class="btn btn-green" style="font-size:12px" onclick="markSeen(${i})">✓ Gesehen</button>`:''}
+          <button class="btn btn-red" style="font-size:12px" onclick="deleteOrder(${i})">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function markSeen(i){
+  let orders = S.get('orders')||[];
+  orders[i].status='seen';
+  S.set('orders',orders);
+  renderOrders();
+  renderDashboard();
+}
+
+function deleteOrder(i){
+  if(!confirm('Bestellung löschen?')) return;
+  let orders = S.get('orders')||[];
+  orders.splice(i,1);
+  S.set('orders',orders);
+  renderOrders();
+  renderDashboard();
+  showToast('🗑️ Gelöscht');
+}
+
+function addOrderManual(){
+  const name=prompt('Kundenname:'); if(!name) return;
+  const phone=prompt('Telefon:')||'-';
+  const addr=prompt('Adresse:')||'-';
+  const items=prompt('Produkte:')||'-';
+  const total=parseFloat(prompt('Gesamtbetrag CHF:')||'0');
+  const pay=prompt('Zahlung (TWINT/Bar):')||'TWINT';
+  const note=prompt('Bemerkung (optional):')||'';
+  let orders=S.get('orders')||[];
+  orders.unshift({name,phone,addr,items,total,pay,note,status:'new',date:new Date().toLocaleDateString('de-CH')});
+  S.set('orders',orders);
+  renderOrders();
+  renderDashboard();
+  showToast('✅ Bestellung eingetragen!');
+}
+
+// ══ SETTINGS ══
+function loadSettings(){
+  document.getElementById('set_wa').value=S.get('wa')||'41774974597';
+  document.getElementById('set_tg').value=S.get('tg')||'sqje_shop';
+}
+function saveSetting(k){
+  S.set(k, document.getElementById('set_'+k).value);
+  showToast('✅ Gespeichert!');
+}
+function changePw(){
+  const pw=document.getElementById('set_pw').value;
+  if(pw.length<6){ showToast('❌ Min. 6 Zeichen!'); return; }
+  S.set('pw',pw);
+  document.getElementById('set_pw').value='';
+  showToast('✅ Passwort geändert!');
+}
+
+// ══ TOAST ══
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2500);
+}
+</script>
+</body>
+</html>
